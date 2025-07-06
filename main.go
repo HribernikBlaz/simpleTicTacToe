@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+func printBoard(board [][]string) {
+	for _, value := range board {
+		fmt.Println(value)
+	}
+}
+
 func getInput(prompt string, r *bufio.Reader) (string, error) {
 	fmt.Print(prompt)
 	input, err := r.ReadString('\n')
@@ -16,25 +22,19 @@ func getInput(prompt string, r *bufio.Reader) (string, error) {
 	return input, err
 }
 
-func printBoard(board [][]string) {
-	for _, value := range board {
-		fmt.Println(value)
-	}
-}
-
-func insertCharacter(board [][]string, row int, col int, value string) [][]string {
+func insertCharacter(board [][]string, row int, col int, value string) bool {
 	if row < 0 || row >= len(board) || col < 0 || col >= len(board[row]) {
 		fmt.Println("Neveljavna pozicija!")
-		return board
+		return false
 	}
 
 	if board[row][col] != "-" {
 		fmt.Println("Na tem mestu je že znak!")
-		return board
+		return false
 	}
 
 	board[row][col] = value
-	return board
+	return true
 }
 
 func getNumOfCharactersInBoard(board [][]string) int {
@@ -63,16 +63,10 @@ func promptOptions(board [][]string, currentChar *string) {
 			return
 		}
 		*currentChar = char
-	} else {
-		fmt.Println("--------------------------")
-		if *currentChar == "X" {
-			fmt.Println("Na potezi je igralec O")
-			*currentChar = "O"
-		} else {
-			*currentChar = "X"
-			fmt.Println("Na potezi je igralec X")
-		}
 	}
+
+	fmt.Println("--------------------------")
+	fmt.Printf("Na potezi je igralec %s\n", *currentChar)
 
 	opt, _ := getInput("Vnesite vrstico (1,2,3): ", reader)
 	row, err := strconv.Atoi(opt)
@@ -90,7 +84,18 @@ func promptOptions(board [][]string, currentChar *string) {
 		return
 	}
 
-	insertCharacter(board, row-1, col-1, *currentChar)
+	wasCharInserted := insertCharacter(board, row-1, col-1, *currentChar)
+	if !wasCharInserted {
+		promptOptions(board, currentChar)
+		return
+	}
+
+	if *currentChar == "X" {
+		*currentChar = "O"
+	} else {
+		*currentChar = "X"
+
+	}
 
 }
 
@@ -120,8 +125,8 @@ func isThereWinner(board [][]string) (bool, string) {
 		return true, board[0][2]
 	} else if board[0][0] != "-" && board[0][0] == board[1][1] && board[1][1] == board[2][2] { // diagonala 1
 		return true, board[0][0]
-	} else if board[1][2] != "-" && board[1][2] == board[1][1] && board[1][1] == board[2][1] { // diagonala 2
-		return true, board[1][2]
+	} else if board[0][2] != "-" && board[0][2] == board[1][1] && board[1][1] == board[2][0] { // diagonala 2
+		return true, board[0][2]
 	} else {
 		return false, "-"
 	}
@@ -146,7 +151,6 @@ func main() {
 		}
 	}
 
-	printBoard(board)
 	fmt.Println("Igra je končana!")
 
 }
