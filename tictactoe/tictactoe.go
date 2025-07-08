@@ -1,4 +1,4 @@
-package main
+package tictactoe
 
 import (
 	"bufio"
@@ -12,6 +12,14 @@ func printBoard(board [][]string) {
 	for _, value := range board {
 		fmt.Println(value)
 	}
+}
+
+func BoardToString(board [][]string) string {
+	var result string
+	for _, row := range board {
+		result += strings.Join(row, " ") + "\n"
+	}
+	return result
 }
 
 func getInput(prompt string, r *bufio.Reader) (string, error) {
