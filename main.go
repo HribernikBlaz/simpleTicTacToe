@@ -17,29 +17,24 @@ func printBoard(board [][]string) {
 func getInput(prompt string, r *bufio.Reader) (string, error) {
 	fmt.Print(prompt)
 	input, err := r.ReadString('\n')
-	input = strings.TrimSpace(input)
-
-	return input, err
+	return strings.TrimSpace(input), err
 }
 
 func insertCharacter(board [][]string, row int, col int, value string) bool {
 	if row < 0 || row >= len(board) || col < 0 || col >= len(board[row]) {
-		fmt.Println("Neveljavna pozicija!")
+		fmt.Println("Invalid position!")
 		return false
 	}
-
 	if board[row][col] != "-" {
-		fmt.Println("Na tem mestu je že znak!")
+		fmt.Println("There is already a character at this place!")
 		return false
 	}
-
 	board[row][col] = value
 	return true
 }
 
 func getNumOfCharactersInBoard(board [][]string) int {
 	total := 0
-
 	for _, row := range board {
 		for _, value := range row {
 			if value == "X" || value == "O" {
@@ -47,110 +42,112 @@ func getNumOfCharactersInBoard(board [][]string) int {
 			}
 		}
 	}
-
 	return total
 }
 
-func promptOptions(board [][]string, currentChar *string) {
-	reader := bufio.NewReader(os.Stdin)
-
+func promptOptions(board [][]string, currentChar *string, reader *bufio.Reader) {
 	if *currentChar == "-" {
-		char, _ := getInput("Vnesite znak (X,O): ", reader)
+		char, _ := getInput("Insert character (X,O): ", reader)
 		char = strings.ToUpper(char)
 		if char != "X" && char != "O" {
-			fmt.Println("Napačen znak! Vnesite X ali O.")
-			promptOptions(board, currentChar)
+			fmt.Println("Invalid character! Insert X or O.")
+			promptOptions(board, currentChar, reader)
 			return
 		}
 		*currentChar = char
 	}
 
 	fmt.Println("--------------------------")
-	fmt.Printf("Na potezi je igralec %s\n", *currentChar)
+	fmt.Printf("It's %s's turn!\n", *currentChar)
 
-	opt, _ := getInput("Vnesite vrstico (1,2,3): ", reader)
-	row, err := strconv.Atoi(opt)
-	if err != nil || row < 1 || row > 3 {
-		fmt.Println("Vrstica mora biti celo število med 1 in 3!")
-		promptOptions(board, currentChar)
+	row := getValidCoordinate("row", reader)
+	col := getValidCoordinate("column", reader)
+
+	if !insertCharacter(board, row-1, col-1, *currentChar) {
+		promptOptions(board, currentChar, reader)
 		return
 	}
 
-	opt, _ = getInput("Vnesite stolpec (1,2,3): ", reader)
-	col, err := strconv.Atoi(opt)
-	if err != nil || col < 1 || col > 3 {
-		fmt.Println("Stolpec mora biti celo število med 1 in 3!")
-		promptOptions(board, currentChar)
-		return
-	}
-
-	wasCharInserted := insertCharacter(board, row-1, col-1, *currentChar)
-	if !wasCharInserted {
-		promptOptions(board, currentChar)
-		return
-	}
-
+	// Switch player
 	if *currentChar == "X" {
 		*currentChar = "O"
 	} else {
 		*currentChar = "X"
-
 	}
+}
 
+func getValidCoordinate(label string, reader *bufio.Reader) int {
+	for {
+		input, _ := getInput(fmt.Sprintf("Insert %s (1,2,3): ", label), reader)
+		num, err := strconv.Atoi(input)
+		if err == nil && num >= 1 && num <= 3 {
+			return num
+		}
+		fmt.Printf("%s must be an integer between 1 and 3!\n", strings.Title(label))
+	}
 }
 
 func isGameOver(board [][]string) (bool, string) {
 	winnerBool, winner := isThereWinner(board)
-	if getNumOfCharactersInBoard(board) == 9 && !winnerBool {
-		return false, "izenačeno"
-	}
 	if winnerBool {
 		return true, winner
 	}
-	return false, winner
+	if getNumOfCharactersInBoard(board) == 9 {
+		return true, "draw"
+	}
+	return false, "-"
 }
 
 func isThereWinner(board [][]string) (bool, string) {
-	if board[0][0] != "-" && board[0][0] == board[0][1] && board[0][1] == board[0][2] { // vrstica 1
-		return true, board[0][0]
-	} else if board[1][0] != "-" && board[1][0] == board[1][1] && board[1][1] == board[1][2] { // vrstica 2
-		return true, board[1][0]
-	} else if board[2][0] != "-" && board[2][0] == board[2][1] && board[2][1] == board[2][2] { // vrstica 3
-		return true, board[2][0]
-	} else if board[0][0] != "-" && board[0][0] == board[1][0] && board[1][0] == board[2][0] { // stolpec 1
-		return true, board[0][0]
-	} else if board[0][1] != "-" && board[0][1] == board[1][1] && board[1][1] == board[1][2] { // stolpec 2
-		return true, board[0][1]
-	} else if board[0][2] != "-" && board[0][2] == board[1][2] && board[1][2] == board[2][2] { // stolpec 3
-		return true, board[0][2]
-	} else if board[0][0] != "-" && board[0][0] == board[1][1] && board[1][1] == board[2][2] { // diagonala 1
-		return true, board[0][0]
-	} else if board[0][2] != "-" && board[0][2] == board[1][1] && board[1][1] == board[2][0] { // diagonala 2
-		return true, board[0][2]
-	} else {
-		return false, "-"
+	// Rows
+	for i := 0; i < 3; i++ {
+		if board[i][0] != "-" && board[i][0] == board[i][1] && board[i][1] == board[i][2] {
+			return true, board[i][0]
+		}
 	}
+	// Columns
+	for i := 0; i < 3; i++ {
+		if board[0][i] != "-" && board[0][i] == board[1][i] && board[1][i] == board[2][i] {
+			return true, board[0][i]
+		}
+	}
+	// Diagonals
+	if board[0][0] != "-" && board[0][0] == board[1][1] && board[1][1] == board[2][2] {
+		return true, board[0][0]
+	}
+	if board[0][2] != "-" && board[0][2] == board[1][1] && board[1][1] == board[2][0] {
+		return true, board[0][2]
+	}
+	return false, "-"
 }
 
-func main() {
+func playGame() {
 	board := [][]string{
-		[]string{"-", "-", "-"},
-		[]string{"-", "-", "-"},
-		[]string{"-", "-", "-"},
+		{"-", "-", "-"},
+		{"-", "-", "-"},
+		{"-", "-", "-"},
 	}
 
 	currentChar := "-"
-	for getNumOfCharactersInBoard(board) < 9 {
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
 		printBoard(board)
 		over, winner := isGameOver(board)
-		if !over {
-			promptOptions(board, &currentChar)
-		} else {
-			fmt.Println("Zmagovalec je: ", winner)
+		if over {
+			if winner == "draw" {
+				fmt.Println("The game is a draw!")
+			} else {
+				fmt.Println("The winner is:", winner)
+			}
 			break
 		}
+		promptOptions(board, &currentChar, reader)
 	}
 
-	fmt.Println("Igra je končana!")
+	fmt.Println("The game is over!")
+}
 
+func main() {
+	playGame()
 }
