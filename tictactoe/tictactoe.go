@@ -95,7 +95,7 @@ func getValidCoordinate(label string, reader *bufio.Reader) int {
 	}
 }
 
-func isGameOver(board [][]string) (bool, string) {
+func IsGameOver(board [][]string) (bool, string) {
 	winnerBool, winner := isThereWinner(board)
 	if winnerBool {
 		return true, winner
@@ -141,7 +141,7 @@ func playGame() {
 
 	for {
 		printBoard(board)
-		over, winner := isGameOver(board)
+		over, winner := IsGameOver(board)
 		if over {
 			if winner == "draw" {
 				fmt.Println("The game is a draw!")

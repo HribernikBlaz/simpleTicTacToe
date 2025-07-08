@@ -21,8 +21,10 @@ func main() {
 	listener, err := net.Listen("tcp", ":9999") // zažene se TCP strežnik na portu 9999
 	if err != nil {
 		fmt.Println("Napaka pri poslušanju:", err)
+		return
 	}
 	defer listener.Close() // port se zapre, da se lahko naslednjič zažene
+
 	fmt.Println("Strežnik teče na portu 9999. Čakam igralce...")
 
 	// 2. Sprejmemo prvega igralca
@@ -45,20 +47,77 @@ func main() {
 	conn1.Write([]byte("Povezan si kot Igralec 1\n"))
 	conn2.Write([]byte("Povezan si kot Igralec 2\n"))
 
-	boardStr := tictactoe.BoardToString(board)
-	conn1.Write([]byte("Trenutna plošča:\n" + boardStr))
-	conn2.Write([]byte("Trenutna plošča:\n" + boardStr))
+	currentPlayer := conn1
+	otherPlayer := conn2
+	currentName := "Igralec 1"
+	currentSymbol := "O"
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	for {
+		boardStr := tictactoe.BoardToString(board)
+		currentPlayer.Write([]byte("\nTrenutna plošča:\n" + boardStr))
+		currentPlayer.Write([]byte("\nNa potezi si. Vnesi potezo v obliki 'vrstica,stolpec' (npr. 2,3):"))
 
-	// Poženemo komunikacijo za oba igralca
-	go handlePlayer(conn1, conn2, "Igralec 1", &wg, &board)
-	go handlePlayer(conn2, conn1, "Igralec 2", &wg, &board)
+		move, err := bufio.NewReader(currentPlayer).ReadString('\n')
+		if err != nil {
+			fmt.Println(currentName, "je zapustil igro.")
+			return
+		}
 
-	wg.Wait() // Počakamo, da oba igralca zaključita
-	fmt.Println("Oba igralca sta zapustila igro. Strežnik se zapira.")
+		move = strings.TrimSpace(move)
+		coords := strings.Split(move, ",")
+		if len(coords) != 2 {
+			currentPlayer.Write([]byte("\nNapačen format! Uporabi obliko 'vrstica,stolpec' (npr. 2,3)"))
+			continue
+		}
 
+		row, err1 := strconv.Atoi(coords[0])
+		col, err2 := strconv.Atoi(coords[1])
+		if err1 != nil || err2 != nil || row < 1 || row > 3 || col < 1 || col > 3 {
+			currentPlayer.Write([]byte("\nNapačne koordinate! Vnesi števila od 1 do 3.\n"))
+			continue
+		}
+
+		if board[row-1][col-1] != "-" {
+			currentPlayer.Write([]byte("\nTo polje je že zasedeno!\n"))
+			continue
+		}
+
+		board[row-1][col-1] = currentSymbol
+
+		boardStr = tictactoe.BoardToString(board)
+		currentPlayer.Write([]byte("\nPoteza sprejeta.\n"))
+		otherPlayer.Write([]byte(currentName + " je naredil potezo: " + move))
+		currentPlayer.Write([]byte("\nNova plošča\n" + boardStr))
+		otherPlayer.Write([]byte("\nNova plošča\n" + boardStr))
+
+		koncano, zmagovalec := tictactoe.IsGameOver(board)
+		if koncano {
+			if zmagovalec == "draw" {
+				currentPlayer.Write([]byte("\nIgra je neodločena!"))
+				otherPlayer.Write([]byte("\nIgra je neodločena!"))
+			} else {
+				currentPlayer.Write([]byte("\nZmagal si!"))
+				otherPlayer.Write([]byte("\nIzgubil si! Zmagovalec je" + currentName))
+			}
+			break
+		}
+
+		if currentPlayer == conn1 {
+			currentPlayer = conn2
+			otherPlayer = conn1
+			currentName = "Igralec 2"
+			currentSymbol = "O"
+		} else {
+			currentPlayer = conn1
+			otherPlayer = conn2
+			currentName = "Igralec 1"
+			currentSymbol = "X"
+		}
+	}
+
+	conn1.Close()
+	conn2.Close()
+	fmt.Println("\n\nIgra je končana")
 }
 
 func handlePlayer(conn net.Conn, otherConn net.Conn, name string, wg *sync.WaitGroup, board *[][]string) {
@@ -92,7 +151,6 @@ func handlePlayer(conn net.Conn, otherConn net.Conn, name string, wg *sync.WaitG
 			continue
 		}
 
-		// simbol določiš glede na igralca (lahko dodaš param)
 		simbol := "X"
 		if name == "Igralec 2" {
 			simbol = "O"
