@@ -50,12 +50,12 @@ func main() {
 	currentPlayer := conn1
 	otherPlayer := conn2
 	currentName := "Igralec 1"
-	currentSymbol := "O"
+	currentSymbol := "X"
 
 	for {
 		boardStr := tictactoe.BoardToString(board)
 		currentPlayer.Write([]byte("\nTrenutna plošča:\n" + boardStr))
-		currentPlayer.Write([]byte("\nNa potezi si. Vnesi potezo v obliki 'vrstica,stolpec' (npr. 2,3):"))
+		currentPlayer.Write([]byte("\nNa potezi si. Vnesi potezo v obliki 'vrstica,stolpec' (npr. 2,3):\n"))
 
 		move, err := bufio.NewReader(currentPlayer).ReadString('\n')
 		if err != nil {
@@ -93,11 +93,14 @@ func main() {
 		koncano, zmagovalec := tictactoe.IsGameOver(board)
 		if koncano {
 			if zmagovalec == "draw" {
-				currentPlayer.Write([]byte("\nIgra je neodločena!"))
-				otherPlayer.Write([]byte("\nIgra je neodločena!"))
+				currentPlayer.Write([]byte("\nIgra je neodločena!\n"))
+				otherPlayer.Write([]byte("\nIgra je neodločena!\n"))
+			} else if zmagovalec == currentSymbol {
+				currentPlayer.Write([]byte("\nZmagal si!\n"))
+				otherPlayer.Write([]byte("\nIzgubil si! Zmagovalec je " + currentName + "\n"))
 			} else {
-				currentPlayer.Write([]byte("\nZmagal si!"))
-				otherPlayer.Write([]byte("\nIzgubil si! Zmagovalec je" + currentName))
+				currentPlayer.Write([]byte("\nIzgubil si! Zmagovalec je nasprotnik.\n"))
+				otherPlayer.Write([]byte("\nZmagal si!\n"))
 			}
 			break
 		}

@@ -16,7 +16,6 @@ func main() {
 	}
 	defer conn.Close()
 
-	// Bere sporočila od strežnika v ločeni gorutini
 	go func() {
 		reader := bufio.NewReader(conn)
 		for {
