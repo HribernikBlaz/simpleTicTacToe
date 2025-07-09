@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	// 1. Povezava na strežnik
+	// 1. Connecting to server
 	conn, err := net.Dial("tcp", "localhost:9999")
 	if err != nil {
-		fmt.Println("Napaka pri povezavi:", err)
+		fmt.Println("Error while connnecting!:", err)
 		return
 	}
 	defer conn.Close()
@@ -21,14 +21,14 @@ func main() {
 		for {
 			msg, err := reader.ReadString('\n')
 			if err != nil {
-				fmt.Println("Strežnik je prekinil povezavo.")
+				fmt.Println("The server has disconected.")
 				os.Exit(0)
 			}
 			fmt.Print(msg)
 		}
 	}()
 
-	// Pošilja uporabnikov vnos
+	// Sends user's input
 	input := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := input.ReadString('\n')
