@@ -35,7 +35,7 @@ func main() {
 	fmt.Println("Player 1 connected!")
 
 	// 3. We accept another player
-	conn2, err := listener.Accept() // waiting for the other one to connect
+	conn2, err := listener.Accept()
 	if err != nil {
 		fmt.Println("Error accepting Player 2", err)
 		return
