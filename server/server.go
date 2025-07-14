@@ -7,7 +7,17 @@ import (
 	"simpletictactoe/tictactoe"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+type Game struct {
+	Board         [][]string
+	Player1       net.Conn
+	Player2       net.Conn
+	CurrentPlayer net.Conn
+	CurrentSymbol string
+	Mutex         sync.Mutex
+}
 
 func main() {
 	board := [][]string{
@@ -42,7 +52,7 @@ func main() {
 	}
 	fmt.Println("Player 2 is connected!")
 
-	// Obvestimo oba igralca
+	// We alert both players
 	conn1.Write([]byte("You are connected as Player 1\n"))
 	conn2.Write([]byte("You are connected as Player 2\n"))
 
